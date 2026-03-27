@@ -3,11 +3,14 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { signIn } from '@/lib/auth-client';
 import { SignInInput, signInSchema } from '@/lib/validations/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 const GoogleIcon = ({ className }: { className?: string }) => (
 	<svg
@@ -46,9 +49,23 @@ const SignIn = () => {
 	} = useForm<SignInInput>({
 		resolver: zodResolver(signInSchema),
 	});
+	const router = useRouter();
 
 	const onSubmit = async (data: SignInInput) => {
-		console.log(data);
+		const { email, password } = data;
+		const { data: res, error } = await signIn.email({
+			email,
+			password,
+			callbackURL: '/dashboard',
+		});
+
+		if (error) {
+			toast.error(error.message || 'Something went wrong');
+			return;
+		}
+
+		toast.success('Welcome back to Nexus');
+		router.push('/dashboard');
 	};
 	return (
 		<div className="flex flex-col md:flex-row h-[calc(100vh-20vh)] w-full max-w-4xl lg:mx-w-5xl overflow-hidden shadow-2xl rounded-2xl dark:border dark:border-white/10">
@@ -123,7 +140,15 @@ const SignIn = () => {
 						)}
 					</div>
 					<div className="space-y-2">
-						<Label>Password</Label>
+						<div className="flex items-center justify-between">
+							<Label>Password</Label>
+							<Link
+								href="/forgot-password"
+								className="text-sm text-digital-blue-600 font-semibold"
+							>
+								Forgot Password?
+							</Link>
+						</div>
 						<Input
 							{...register('password')}
 							aria-invalid={errors?.password ? 'true' : 'false'}

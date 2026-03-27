@@ -3,11 +3,14 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { signUp } from '@/lib/auth-client';
 import { SignUpInput, signUpSchema } from '@/lib/validations/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 const GoogleIcon = ({ className }: { className?: string }) => (
 	<svg
@@ -46,10 +49,24 @@ const SignUp = () => {
 	} = useForm<SignUpInput>({
 		resolver: zodResolver(signUpSchema),
 	});
+	const router = useRouter();
 
 	const onSubmit = async (data: SignUpInput) => {
-		// TODO: api call
-		console.log(data);
+		const { name, email, password } = data
+		const {data: res, error} = await signUp.email({
+			name,
+			email,
+			password,
+			callbackURL: "/dashboard"
+		})
+
+		if(error) {
+			toast.error(error.message || "Something went wrong")
+			return
+		}
+
+		toast.success("Account created successfully! Welcome to Nexus")
+		router.push("/dashboard")
 	};
 	return (
 		<div className="flex flex-col md:flex-row w-full max-w-4xl lg:mx-w-5xl overflow-hidden shadow-2xl rounded-2xl dark:border dark:border-white/10 h-[calc(100vh-20vh)]">

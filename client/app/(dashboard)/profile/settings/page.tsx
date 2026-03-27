@@ -1,10 +1,30 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { authClient } from '@/lib/auth-client';
 import { Camera, Lock, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 
 const SettingsPage = () => {
+	const { data: session } = authClient.useSession();
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	const [name, setName] = useState(session?.user?.name || '');
+	const [email, setEmail] = useState(session?.user?.email || '');
+
+	const handleUpdateProfileName = async () => {
+		setIsUpdating(true);
+		await authClient.updateUser({
+			name,
+		});
+		setIsUpdating(false);
+	};
+
+	const user = session?.user;
+
 	return (
 		<div className="w-full max-w-4xl mx-auto flex flex-col gap-8 px-4 py-6 mb-20">
 			<div className="flex flex-col gap-1 text-center sm:text-left">
@@ -22,16 +42,21 @@ const SettingsPage = () => {
 				<div className="flex flex-col gap-4 items-center justify-center py-4">
 					<div className="relative group">
 						<Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-2 border-digital-blue-500/20">
-							<AvatarFallback>AM</AvatarFallback>
-							<AvatarImage src="https://github.com/shadcn.png" alt="Ajay" />
+							{user?.image ? (
+								<AvatarImage src={user.image} alt={user.name || 'User'} />
+							) : (
+								<AvatarFallback className="text-5xl">
+									{user?.name?.slice(0, 2).toUpperCase()}
+								</AvatarFallback>
+							)}
 						</Avatar>
 						<button className="absolute bottom-0 right-0 p-2 bg-digital-blue-600 text-white rounded-full shadow-lg hover:bg-digital-blue-700 transition-colors">
 							<Camera size={16} />
 						</button>
 					</div>
 					<div className="text-center">
-						<h2 className="text-xl font-semibold">Ajay M</h2>
-						<p className="text-sm text-muted-foreground">ajay@example.com</p>
+						<h2 className="text-xl font-semibold">{user?.name}</h2>
+						<p className="text-sm text-muted-foreground">{user?.email}</p>
 					</div>
 				</div>
 				{/* Name and Email */}
@@ -40,7 +65,8 @@ const SettingsPage = () => {
 						<Label htmlFor="name">Name</Label>
 						<Input
 							id="name"
-							defaultValue="Ajay M"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
 							type="text"
 							className="bg-muted/50 border-white/10"
 						/>
@@ -49,9 +75,10 @@ const SettingsPage = () => {
 						<Label htmlFor="email">Email</Label>
 						<Input
 							id="email"
-							defaultValue="ajay@example.com"
+							value={email}
 							type="email"
 							className="bg-muted/50 border-white/10"
+							disabled
 						/>
 					</div>
 				</div>
@@ -115,8 +142,12 @@ const SettingsPage = () => {
 				>
 					Cancel
 				</Button>
-				<Button className="w-full sm:w-auto h-12 px-8 bg-digital-blue-600 hover:bg-digital-blue-700 text-white shadow-lg shadow-digital-blue-500/20">
-					Save Changes
+				<Button
+					className="w-full sm:w-auto h-12 px-8 bg-digital-blue-600 hover:bg-digital-blue-700 text-white shadow-lg shadow-digital-blue-500/20"
+					onClick={handleUpdateProfileName}
+					disabled={isUpdating}
+				>
+					{isUpdating ? 'Saving...' : 'Save Changes'}
 				</Button>
 			</div>
 		</div>

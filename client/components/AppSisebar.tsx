@@ -1,5 +1,6 @@
 'use client';
 
+import { authClient, useSession } from '@/lib/auth-client';
 import {
 	Briefcase,
 	ChevronsUpDown,
@@ -11,7 +12,7 @@ import {
 	User,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
 	DropdownMenu,
@@ -62,7 +63,23 @@ const navItems = [
 const AppSisebar = () => {
 	const pathname = usePathname();
 	const { state } = useSidebar();
+	const router = useRouter();
+
+	const { data: session, isPending, error } = useSession();
 	const isCollapsed = state === 'collapsed';
+
+	const handleLogout = async () => {
+		authClient.signOut({
+			fetchOptions: {
+				onSuccess: () => {
+					router.push('/sign-in');
+				},
+			},
+		});
+	};
+
+	const user = session?.user;
+	console.log(user);
 	return (
 		<Sidebar variant="floating" collapsible="icon">
 			<SidebarHeader>
@@ -130,16 +147,18 @@ const AppSisebar = () => {
 									className="data-[state=open]:bg-muted data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
 								>
 									<Avatar className="h-8 w-8 rounded-lg">
-										<AvatarImage
-											src="https://github.com/shadcn.png"
-											alt="Ajay"
-										/>
-										<AvatarFallback className="rounded-lg">AM</AvatarFallback>
+										{user?.image ? (
+											<AvatarImage src={user?.image} alt={user?.name} />
+										) : (
+											<AvatarFallback className="h-8 w-8 rounded-xl">
+												{user?.name?.slice(0, 2).toUpperCase()}
+											</AvatarFallback>
+										)}
 									</Avatar>
 									<div className="grid flex-1 text-left text-sm leading-tight">
-										<span className="truncate font-semibold">Ajay M</span>
+										<span className="truncate font-semibold">{user?.name}</span>
 										<span className="truncate text-xs text-muted-foreground">
-											ajay@example.com
+											{user?.email}
 										</span>
 									</div>
 									<ChevronsUpDown size={18} className="ml-4" />
@@ -155,16 +174,20 @@ const AppSisebar = () => {
 								<DropdownMenuLabel className="p-0 font-normal">
 									<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 										<Avatar className="h-8 w-8 rounded-lg">
-											<AvatarImage
-												src="https://github.com/shadcn.png"
-												alt="Ajay"
-											/>
-											<AvatarFallback className="rounded-lg">AM</AvatarFallback>
+											{user?.image ? (
+												<AvatarImage src={user?.image} alt={user?.name} />
+											) : (
+												<AvatarFallback className="h-8 w-8 rounded-xl">
+													{user?.name?.slice(0, 2).toUpperCase()}
+												</AvatarFallback>
+											)}
 										</Avatar>
 										<div className="grid flex-1 text-left text-sm leading-tight">
-											<span className="truncate font-semibold">Ajay M</span>
+											<span className="truncate font-semibold">
+												{user?.name}
+											</span>
 											<span className="truncate text-xs text-muted-foreground">
-												ajay@example.com
+												{user?.email}
 											</span>
 										</div>
 									</div>
@@ -197,14 +220,12 @@ const AppSisebar = () => {
 								</DropdownMenuGroup>
 
 								<DropdownMenuGroup>
-									<DropdownMenuItem className="p-2 text-destructive focus:bg-destructive/10">
-										<Link
-											href="#"
-											className="flex gap-1 items-center justify-center"
-										>
-											<LogOutIcon className="mr-2 size-4" />
-											Logout
-										</Link>
+									<DropdownMenuItem
+										className="p-2 text-destructive focus:bg-destructive/10 hover:text-destructive cursor-pointer"
+										onSelect={(e) => handleLogout()}
+									>
+										<LogOutIcon className="mr-2 size-4" />
+										Logout
 									</DropdownMenuItem>
 								</DropdownMenuGroup>
 							</DropdownMenuContent>

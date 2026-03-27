@@ -1,30 +1,33 @@
-import express, { type Request, type Response } from 'express';
+import { toNodeHandler } from 'better-auth/node';
 import dotenv from 'dotenv';
-import cors from 'cors';
+import app from './app.js';
 import { connectDB } from './config/db.js';
+import { createAuth } from './lib/auth.js';
+import { setAuthInstance } from './lib/authInstance.js';
 
 // Load environment variables
 dotenv.config();
 
-// Initialize express app
-const app = express();
+// Define port
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
+// Start server
+const startServer = async () => {
+	try {
+		// Connect to MongoDB
+		await connectDB();
 
-// Global Middleware
-app.use(cors());
-app.use(express.json());
+		// Now that DB is connected, we can safely create the auth instance
+		const auth = createAuth();
+		setAuthInstance(auth);
 
-// Health Check Routes
-app.get('/', (req: Request, res: Response) => {
-	res.send('Hello World');
-});
+		// Start the server
+		app.listen(PORT, () => {
+			console.log(`Server is running on port ${PORT}`);
+		});
+	} catch (error) {
+		console.log('Error starting server', error);
+	}
+};
 
-// Auth Routes
-
-
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
-});
+startServer();
