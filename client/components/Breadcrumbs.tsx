@@ -20,11 +20,13 @@ const Breadcrumbs = () => {
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink asChild>
-						<Link className='text-black dark:text-white' href="/dashboard">Dashboard</Link>
+						<Link className="text-black dark:text-white" href="/">
+							Home
+						</Link>
 					</BreadcrumbLink>
 				</BreadcrumbItem>
 				{pathSegments.map((segment, index) => {
-					if (segment === 'dashboard') return null;
+					if (segment === 'home') return null;
 
 					const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
 					const isLast = index === pathSegments.length - 1;

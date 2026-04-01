@@ -16,7 +16,7 @@ const resumeSchema = new Schema<IResume>(
 		fileUrl: { type: String }, // url from s3/cloudinary/uploadthing
     fileKey: { type: String, required: true }, // key from s3/cloudinary/uploadthing
 		isMaster: { type: Boolean, default: false },
-		content: { type: Object }, // parsed JSON/TEXT from the uploaded resume
+		content: { type: Schema.Types.Mixed }, // parsed JSON/TEXT from the uploaded resume
 	},
 	{ timestamps: true },
 );

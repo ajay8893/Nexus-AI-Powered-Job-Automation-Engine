@@ -5,7 +5,7 @@ const f = createUploadthing();
 
 export const ourFileRouter = {
 	resumeUploader: f({
-		pdf: { maxFileSize: '4MB', maxFileCount: 1 },
+		pdf: { maxFileSize: '4MB', maxFileCount: 5 },
 	})
 		.middleware(async ({ req }) => {
 			// get the session
@@ -24,18 +24,29 @@ export const ourFileRouter = {
 			console.log('File URL: ', file.ufsUrl);
 
 			// save to database
-			await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/upload`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					userId: metadata.userId,
-					fileName: file.name,
-					fileUrl: file.ufsUrl || file.url,
-					fileKey: file.key,
-				}),
-			});
+			try {
+				const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/upload`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						userId: metadata.userId,
+						fileName: file.name,
+						fileUrl: file.ufsUrl || file.url,
+						fileKey: file.key,
+					}),
+				});
+
+				if (!response.ok) {
+					const errorData = await response.text();
+					console.error('Failed to save resume to DB:', response.status, errorData);
+				} else {
+					console.log('Resume saved to DB successfully');
+				}
+			} catch (error) {
+				console.error('Error saving resume to DB:', error);
+			}
 
 			return { uploadedBy: metadata.userId };
 		}),

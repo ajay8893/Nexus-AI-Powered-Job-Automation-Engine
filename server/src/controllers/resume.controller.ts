@@ -1,4 +1,6 @@
+import axios from 'axios';
 import type { Request, Response } from 'express';
+import { PDFParse } from 'pdf-parse';
 import { UTApi } from 'uploadthing/server';
 import { Resume } from '../models/resume.model.js';
 
@@ -15,6 +17,26 @@ interface SaveResumeBody {
 	fileUrl: string;
 	fileKey: string;
 }
+
+export const reparseResumeText = async (fileUrl: string) => {
+	try {
+		console.log('--- Attempting PDF Parsing from URL ---', fileUrl);
+		const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+		const buffer = Buffer.from(response.data);
+
+		const parser = new PDFParse({ data: buffer });
+		const parsedData = await parser.getText();
+		const text = parsedData.text || '';
+		
+		await parser.destroy();
+		
+		console.log('--- Parsing Complete --- length:', text.length);
+		return text;
+	} catch (error: any) {
+		console.error('--- Parsing Failed ---', error.message);
+		return '';
+	}
+};
 
 export const setMasterResume = async (
 	req: Request<{}, {}, SetMasterBody>,
@@ -62,19 +84,33 @@ export const saveResume = async (
 	}
 
 	try {
+		// PDF Parsing
+		const extractedText = await reparseResumeText(fileUrl);
+
+		if (!extractedText) {
+			console.warn('Warning: Resume extracted text is empty for URL:', fileUrl);
+		}
+
+		// Check if user has any existing resumes — auto-set first one as master
+		const existingCount = await Resume.countDocuments({ userId });
+		const shouldBeMaster = existingCount === 0;
+
+		// Create the document with the 'content' field populated
 		const newResume = await Resume.create({
 			userId,
 			fileName,
 			fileUrl,
 			fileKey,
-			isMaster: false,
+			content: extractedText,
+			isMaster: shouldBeMaster,
 		});
 
 		return res
 			.status(201)
 			.json({ message: 'Resume saved successfully', resume: newResume });
-	} catch (error) {
-		return res.status(500).json({ error: 'Failed to save resume' });
+	} catch (error: any) {
+		console.error('Error in saveResume:', error.message);
+		return res.status(500).json({ error: 'Failed to save resume', details: error.message });
 	}
 };
 
@@ -108,12 +144,25 @@ export const deleteResume = async (req: Request, res: Response) => {
 			return res.status(404).json({ error: 'Resume not found' });
 		}
 
-		// delete from uploadthing
+		const wasMaster = resume.isMaster;
+		const userId = resume.userId;
+
+		// Delete from uploadthing
 		if (resume.fileKey) {
 			await utapi.deleteFiles(resume.fileKey);
 		}
 
 		await Resume.findByIdAndDelete(resumeId);
+
+		// If the deleted resume was master, auto-promote the most recent remaining resume
+		if (wasMaster) {
+			const nextResume = await Resume.findOne({ userId }).sort({ createdAt: -1 });
+			if (nextResume) {
+				nextResume.isMaster = true;
+				await nextResume.save();
+				console.log(`✅ Auto-promoted "${nextResume.fileName}" to master after deletion`);
+			}
+		}
 
 		res
 			.status(200)

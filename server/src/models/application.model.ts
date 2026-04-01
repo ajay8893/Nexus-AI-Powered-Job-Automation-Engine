@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IApplication extends Document {
 	userId: mongoose.Types.ObjectId;
+	tailoredDocumentId?: mongoose.Types.ObjectId;
 	companyName: string;
 	jobTitle: string;
 	location?: string;
@@ -15,6 +16,7 @@ export interface IApplication extends Document {
 const jobApplicationSchema = new Schema(
 	{
 		userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+		tailoredDocumentId: { type: Schema.Types.ObjectId, ref: 'TailoredDocument' },
 		companyName: { type: String, required: true },
 		jobTitle: { type: String, required: true },
 		location: { type: String },

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { authClient, useSession } from '@/lib/auth-client';
 import {
 	Briefcase,
@@ -64,9 +65,14 @@ const AppSisebar = () => {
 	const pathname = usePathname();
 	const { state } = useSidebar();
 	const router = useRouter();
+	const [mounted, setMounted] = useState(false);
 
 	const { data: session, isPending, error } = useSession();
 	const isCollapsed = state === 'collapsed';
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	const handleLogout = async () => {
 		authClient.signOut({
@@ -79,7 +85,7 @@ const AppSisebar = () => {
 	};
 
 	const user = session?.user;
-	console.log(user);
+
 	return (
 		<Sidebar variant="floating" collapsible="icon">
 			<SidebarHeader>
@@ -140,6 +146,25 @@ const AppSisebar = () => {
 			<SidebarFooter>
 				<SidebarMenu>
 					<SidebarMenuItem>
+						{!mounted ? (
+							<SidebarMenuButton
+								size="lg"
+								className="cursor-pointer"
+							>
+								<Avatar className="h-8 w-8 rounded-lg">
+									<AvatarFallback className="h-8 w-8 rounded-xl">
+										{user?.name?.slice(0, 2).toUpperCase() || '..'}
+									</AvatarFallback>
+								</Avatar>
+								<div className="grid flex-1 text-left text-sm leading-tight">
+									<span className="truncate font-semibold">{user?.name || 'Loading...'}</span>
+									<span className="truncate text-xs text-muted-foreground">
+										{user?.email || ''}
+									</span>
+								</div>
+								<ChevronsUpDown size={18} className="ml-4" />
+							</SidebarMenuButton>
+						) : (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<SidebarMenuButton
@@ -210,7 +235,7 @@ const AppSisebar = () => {
 								<DropdownMenuGroup>
 									<DropdownMenuItem className="p-2">
 										<Link
-											href="/profile/settings"
+											href="/profile"
 											className="flex gap-1 items-center justify-center cursor-pointer"
 										>
 											<Settings className="mr-2 size-4" />
@@ -230,6 +255,7 @@ const AppSisebar = () => {
 								</DropdownMenuGroup>
 							</DropdownMenuContent>
 						</DropdownMenu>
+						)}
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarFooter>

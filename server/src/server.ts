@@ -20,7 +20,7 @@ const startServer = async () => {
 		// Now that DB is connected, we can safely create the auth instance
 		const auth = createAuth();
 		setAuthInstance(auth);
-
+		
 		// Start the server
 		app.listen(PORT, () => {
 			console.log(`Server is running on port ${PORT}`);

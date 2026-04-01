@@ -33,8 +33,15 @@ export const createAuth = () => {
 
 		secret: process.env.BETTER_AUTH_SECRET,
 
+		baseURL: 'http://localhost:5001',
+
 		emailAndPassword: {
 			enabled: true,
+		},
+
+		cookies: {
+			sameSite: 'lax',
+			secure: false,
 		},
 		trustedOrigins: ['http://localhost:3000', 'http://localhost:5001'],
 	});

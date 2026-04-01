@@ -1,7 +1,10 @@
 import cors from 'cors';
 import express, { type Request, type Response } from 'express';
-import authRouter from './routes/auth.route.js';
 import resumeRouter from './routes/resume.route.js';
+import tailorRouter from './routes/tailor.route.js';
+import applicationRouter from './routes/application.route.js';
+import { getAuthInstance } from './lib/authInstance.js';
+import { toNodeHandler } from 'better-auth/node';
 
 // Initialize express app
 const app = express();
@@ -15,15 +18,19 @@ app.use(
 );
 app.use(express.json());
 
-// Health Check Routes
-app.get('/', (req: Request, res: Response) => {
-	res.send('Hello World');
-});
 
-// Auth Routes
-app.use('/api/auth', authRouter);
+app.use('/api/auth', (req, res) => {
+	const auth = getAuthInstance();
+	return toNodeHandler(auth)(req, res);
+});
 
 // Resume Routes
 app.use('/api', resumeRouter);
+
+// Tailor Routes
+app.use('/api', tailorRouter);
+
+// Application Routes
+app.use('/api', applicationRouter);
 
 export default app;

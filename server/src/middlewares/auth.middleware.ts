@@ -1,4 +1,8 @@
-import type { NextFunction, Request as ExpressRequest, Response } from 'express';
+import type {
+	Request as ExpressRequest,
+	NextFunction,
+	Response,
+} from 'express';
 import { getSessionService } from '../services/auth.services.js';
 
 export const authMiddleware = async (
@@ -13,7 +17,7 @@ export const authMiddleware = async (
 			return res.status(401).json({ message: 'Unauthorized' });
 		}
 
-		req.user = session.user;
+		(req as any).user = session.user;
 		next();
 	} catch (error) {
 		next(error);
