@@ -9,23 +9,27 @@ import tailorRouter from './routes/tailor.route.js';
 // Initialize express app
 const app = express();
 
-const allowedOrigins = [
-	'http://localhost:3000', // Local development
-	process.env.CLIENT_URL, // Production Vercel URL
-].filter(Boolean) as string[];
-
-// Global Middleware
 app.use(
 	cors({
 		origin: (origin, callback) => {
-			// Allow requests with no origin (like mobile apps, curl, or server-to-server)
-			if (!origin || allowedOrigins.includes(origin)) {
+			// 1. Allow local dev and your explicit canonical production URL
+			const explicitOrigins = ['http://localhost:3000', process.env.CLIENT_URL];
+
+			if (!origin) {
+				return callback(null, true);
+			}
+
+			// 2. Grant access if it's an exact match OR if it matches any Vercel preview subdomain
+			const isExplicitMatch = explicitOrigins.includes(origin);
+			const isVercelPreviewMatch = origin.endsWith('.vercel.app');
+
+			if (isExplicitMatch || isVercelPreviewMatch) {
 				callback(null, true);
 			} else {
-				callback(new Error('Not allowed by CORS'));
+				callback(new Error('Blocked by Nexus Security Layer (CORS)'));
 			}
 		},
-		credentials: true,
+		credentials: true, // Vital for sharing authentication cookies cross-domain
 	}),
 );
 app.use(express.json());
