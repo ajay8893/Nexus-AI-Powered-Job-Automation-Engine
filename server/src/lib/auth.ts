@@ -7,6 +7,9 @@ export const createAuth = () => {
 		throw new Error('MongoDB not connected yet');
 	}
 
+	const isProduction =
+		process.env.NODE_ENV === 'production' || !!process.env.CLIENT_URL;
+
 	return betterAuth({
 		database: mongodbAdapter(mongoose.connection.db!, {
 			client: mongoose.connection.getClient(),
@@ -33,20 +36,34 @@ export const createAuth = () => {
 
 		secret: process.env.BETTER_AUTH_SECRET,
 
-		baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5001',
+		// baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5001',
+
+		// 💡 FIX: Replace the single string with a dynamic allowlist object
+		baseURL: {
+			allowedHosts: [
+				'localhost:3000',
+				'localhost:5001',
+				'nexus-ai-powered-job-automation-eng.vercel.app', // Your primary domain
+				'*.vercel.app', // Whitelists all Vercel previews!
+			],
+			fallback: process.env.BETTER_AUTH_URL || 'http://localhost:5001',
+		},
 
 		emailAndPassword: {
 			enabled: true,
 		},
 
 		cookies: {
-			sameSite: 'lax',
-			secure: false,
+			sameSite: isProduction ? 'none' : 'lax',
+			secure: isProduction,
 		},
+
+		// Better Auth automatically maps allowedHosts into trustedOrigins,
+		// but we add the client origin fallback for global CORS coverage.
 		trustedOrigins: [
 			'http://localhost:3000',
 			'http://localhost:5001',
-			process.env.CLIENT_URL || '',
+			'https://*.vercel.app', // Allows requests from any Vercel domain variant
 		],
 	});
 };
