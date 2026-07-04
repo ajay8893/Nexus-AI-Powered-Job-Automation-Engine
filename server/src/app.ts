@@ -1,23 +1,34 @@
+import { toNodeHandler } from 'better-auth/node';
 import cors from 'cors';
-import express, { type Request, type Response } from 'express';
+import express from 'express';
+import { getAuthInstance } from './lib/authInstance.js';
+import applicationRouter from './routes/application.route.js';
 import resumeRouter from './routes/resume.route.js';
 import tailorRouter from './routes/tailor.route.js';
-import applicationRouter from './routes/application.route.js';
-import { getAuthInstance } from './lib/authInstance.js';
-import { toNodeHandler } from 'better-auth/node';
 
 // Initialize express app
 const app = express();
 
+const allowedOrigins = [
+	'http://localhost:3000', // Local development
+	process.env.CLIENT_URL, // Production Vercel URL
+].filter(Boolean) as string[];
+
 // Global Middleware
 app.use(
 	cors({
-		origin: 'http://localhost:3000',
+		origin: (origin, callback) => {
+			// Allow requests with no origin (like mobile apps, curl, or server-to-server)
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error('Not allowed by CORS'));
+			}
+		},
 		credentials: true,
 	}),
 );
 app.use(express.json());
-
 
 app.use('/api/auth', (req, res) => {
 	const auth = getAuthInstance();
