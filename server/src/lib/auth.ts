@@ -33,7 +33,7 @@ export const createAuth = () => {
 
 		secret: process.env.BETTER_AUTH_SECRET,
 
-		baseURL: 'http://localhost:5001',
+		baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5001',
 
 		emailAndPassword: {
 			enabled: true,
@@ -43,6 +43,10 @@ export const createAuth = () => {
 			sameSite: 'lax',
 			secure: false,
 		},
-		trustedOrigins: ['http://localhost:3000', 'http://localhost:5001'],
+		trustedOrigins: [
+			'http://localhost:3000',
+			'http://localhost:5001',
+			process.env.CLIENT_URL || '',
+		],
 	});
 };
